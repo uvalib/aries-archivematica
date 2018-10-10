@@ -24,6 +24,11 @@ type configBoolItem struct {
 
 type configData struct {
 	listenPort         configStringItem
+	dbHost              configStringItem
+	dbName              configStringItem
+	dbUser              configStringItem
+	dbPass              configStringItem
+	dbAllowOldPasswords configBoolItem
 	useHttps           configBoolItem
 	sslCrt             configStringItem
 	sslKey             configStringItem
@@ -33,6 +38,11 @@ var config configData
 
 func init() {
 	config.listenPort = configStringItem{value: "", configItem: configItem{flag: "l", env: "ARIES_ARCHIVEMATICA_LISTEN_PORT", desc: "listen port"}}
+	config.dbHost = configStringItem{value: "", configItem: configItem{flag: "h", env: "ARIES_ARCHIVEMATICA_DB_HOST", desc: "database host"}}
+	config.dbName = configStringItem{value: "", configItem: configItem{flag: "n", env: "ARIES_ARCHIVEMATICA_DB_NAME", desc: "database name"}}
+	config.dbUser = configStringItem{value: "", configItem: configItem{flag: "u", env: "ARIES_ARCHIVEMATICA_DB_USER", desc: "database user"}}
+	config.dbPass = configStringItem{value: "", configItem: configItem{flag: "p", env: "ARIES_ARCHIVEMATICA_DB_PASS", desc: "database password"}}
+	config.dbAllowOldPasswords = configBoolItem{value: false, configItem: configItem{flag: "o", env: "ARIES_ARCHIVEMATICA_DB_ALLOW_OLD_PASSWORDS", desc: "allow old database passwords"}}
 	config.useHttps = configBoolItem{value: false, configItem: configItem{flag: "s", env: "ARIES_ARCHIVEMATICA_USE_HTTPS", desc: "use https"}}
 	config.sslCrt = configStringItem{value: "", configItem: configItem{flag: "c", env: "ARIES_ARCHIVEMATICA_SSL_CRT", desc: "ssl crt"}}
 	config.sslKey = configStringItem{value: "", configItem: configItem{flag: "k", env: "ARIES_ARCHIVEMATICA_SSL_KEY", desc: "ssl key"}}
@@ -66,6 +76,11 @@ func flagBoolVar(item *configBoolItem) {
 func getConfigValues() {
 	// get values from the command line first, falling back to environment variables
 	flagStringVar(&config.listenPort)
+	flagStringVar(&config.dbHost)
+	flagStringVar(&config.dbName)
+	flagStringVar(&config.dbUser)
+	flagStringVar(&config.dbPass)
+	flagBoolVar(&config.dbAllowOldPasswords)
 	flagBoolVar(&config.useHttps)
 	flagStringVar(&config.sslCrt)
 	flagStringVar(&config.sslKey)
@@ -76,6 +91,10 @@ func getConfigValues() {
 	// die if any of them are not set
 	configOK := true
 	configOK = ensureConfigStringSet(&config.listenPort) && configOK
+	configOK = ensureConfigStringSet(&config.dbHost) && configOK
+	configOK = ensureConfigStringSet(&config.dbName) && configOK
+	configOK = ensureConfigStringSet(&config.dbUser) && configOK
+	configOK = ensureConfigStringSet(&config.dbPass) && configOK
 	if config.useHttps.value == true {
 		configOK = ensureConfigStringSet(&config.sslCrt) && configOK
 		configOK = ensureConfigStringSet(&config.sslKey) && configOK
@@ -87,6 +106,11 @@ func getConfigValues() {
 	}
 
 	logger.Printf("[CONFIG] listenPort          = [%s]", config.listenPort.value)
+	logger.Printf("[CONFIG] dbHost              = [%s]", config.dbHost.value)
+	logger.Printf("[CONFIG] dbName              = [%s]", config.dbName.value)
+	logger.Printf("[CONFIG] dbUser              = [%s]", config.dbUser.value)
+	logger.Printf("[CONFIG] dbPass              = [REDACTED]")
+	logger.Printf("[CONFIG] dbAllowOldPasswords = [%s]", strconv.FormatBool(config.dbAllowOldPasswords.value))
 	logger.Printf("[CONFIG] useHttps            = [%s]", strconv.FormatBool(config.useHttps.value))
 	logger.Printf("[CONFIG] sslCrt              = [%s]", config.sslCrt.value)
 	logger.Printf("[CONFIG] sslKey              = [%s]", config.sslKey.value)

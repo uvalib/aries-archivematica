@@ -1,11 +1,14 @@
 package main
 
 import (
+	"database/sql"
 	"fmt"
 	"log"
 	"net/http"
 	"os"
+	"strconv"
 
+	_ "github.com/go-sql-driver/mysql"
 	"github.com/julienschmidt/httprouter"
 	"github.com/rs/cors"
 )
@@ -13,6 +16,7 @@ import (
 const progname = "aries-archivematica"
 const version = "0.0.1"
 
+var db *sql.DB
 var logger *log.Logger
 
 /**
@@ -26,6 +30,19 @@ func main() {
 	logger.Printf("===> %s staring up <===", progname)
 	logger.Printf("Load configuration...")
 	getConfigValues()
+
+	// Init DB connection
+	logger.Printf("Init DB connection...")
+	connectStr := fmt.Sprintf("%s:%s@tcp(%s)/%s?allowOldPasswords=%s", config.dbUser.value, config.dbPass.value,
+		config.dbHost.value, config.dbName.value, strconv.FormatBool(config.dbAllowOldPasswords.value))
+
+	var err error
+	db, err = sql.Open("mysql", connectStr)
+	if err != nil {
+		fmt.Printf("Database connection failed: %s", err.Error())
+		os.Exit(1)
+	}
+	defer db.Close()
 
 	// Set routes and start server
 	mux := httprouter.New()
