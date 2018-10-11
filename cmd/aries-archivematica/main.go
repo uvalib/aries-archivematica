@@ -46,7 +46,7 @@ func main() {
 	defer adb.Close()
 
 	logger.Printf("Initializing Archivematica Storage Service database connection...")
-	connectStr = fmt.Sprintf("%s:%s?_query_only=true", config.storageDBProtocol.value, config.storageDBHost.value)
+	connectStr = fmt.Sprintf("%s:%s?mode=ro", config.storageDBProtocol.value, config.storageDBHost.value)
 	sdb, err = sql.Open("sqlite3", connectStr)
 	if err != nil {
 		fmt.Printf("Archivematica Storage Service database initialization failed: %s", err.Error())
