@@ -40,7 +40,7 @@ func getAIPsViaApplication() {
 }
 
 func getAIPsViaStorageService() {
-	qs := `select p.uuid, '/' || l.relative_path || '/' || p.current_path as path from locations_package p left join locations_location l on p.current_location_id = l.uuid where l.enabled = 1 and l.purpose = "AS"`
+	qs := `select p.uuid, s.path || l.relative_path || '/' || p.current_path as fullpath from locations_package p left join locations_location l on p.current_location_id = l.uuid left join locations_space s on l.space_id = s.uuid where l.enabled = 1 and l.purpose = "AS" and p.package_type = "AIP" and p.status = "UPLOADED"`
 
 	rows, err := sdb.Query(qs)
 
@@ -53,13 +53,13 @@ func getAIPsViaStorageService() {
 
 	for rows.Next() {
 		var uuid string
-		var currentPath string
-		err = rows.Scan(&uuid, &currentPath)
+		var path string
+		err = rows.Scan(&uuid, &path)
 		if err != nil {
 			logger.Printf("rows.Scan() failed: [%s]", err.Error())
 			return
 		}
-		logger.Printf("uuid: [%s]  currentPath: [%s]", uuid, currentPath)
+		logger.Printf("uuid: [%s]  path: [%s]", uuid, path)
 	}
 
 	// get any error encountered during iteration
@@ -70,12 +70,12 @@ func getAIPsViaStorageService() {
 	}
 }
 
-func getAIPInfo(id string) (string, string, error) {
+func getAIPInfo(id string) (string, string, string, error) {
+	// 1. if id is a UUID, lookup AIP filename in adb; otherwise, lookup UUID
+	// 2. extract AIP name from AIP filename: ${AIPName}-${UUID}.7z
+	// 2. lookup AIP location in sdb based on UUID
 
-	// 1. match name to entry in adb
-	// 2. lookup entry in sdb
-
-	return "", "", nil
+	return "00000000-0000-0000-0000-000000000000", "fakeAIP", "/path/to/fakeAIP.7z", nil
 }
 
 /* Handles a request for information about a single ID */
@@ -87,12 +87,12 @@ func archivematicaHandleId(w http.ResponseWriter, r *http.Request, params httpro
 	getAIPsViaApplication()
 	getAIPsViaStorageService()
 
-	aipUUID, aipFile, aipErr := getAIPInfo(id)
+	aipUUID, aipName, aipFile, aipErr := getAIPInfo(id)
 	if aipErr != nil {
 		logger.Printf("aipErr: [%s]", aipErr.Error())
 	}
 
-	logger.Printf("aipUUID: [%s]  aipFile: [%s]", aipUUID, aipFile)
+	logger.Printf("aipUUID: [%s]  aipName: [%s]  aipFile: [%s]", aipUUID, aipName, aipFile)
 
 	// build Aries API response object
 	var archivematicaResponse AriesAPI
