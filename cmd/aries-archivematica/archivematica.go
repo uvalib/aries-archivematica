@@ -70,6 +70,14 @@ func getAIPsViaStorageService() {
 	}
 }
 
+func getAIPInfo(id string) (string, string, error) {
+
+	// 1. match name to entry in adb
+	// 2. lookup entry in sdb
+
+	return "", "", nil
+}
+
 /* Handles a request for information about a single ID */
 func archivematicaHandleId(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
 	logger.Printf("%s %s", r.Method, r.RequestURI)
@@ -79,9 +87,17 @@ func archivematicaHandleId(w http.ResponseWriter, r *http.Request, params httpro
 	getAIPsViaApplication()
 	getAIPsViaStorageService()
 
+	aipUUID, aipFile, aipErr := getAIPInfo(id)
+	if aipErr != nil {
+		logger.Printf("aipErr: [%s]", aipErr.Error())
+	}
+
+	logger.Printf("aipUUID: [%s]  aipFile: [%s]", aipUUID, aipFile)
+
 	// build Aries API response object
 	var archivematicaResponse AriesAPI
-	archivematicaResponse.Identifiers = append(archivematicaResponse.Identifiers, id)
+
+	archivematicaResponse.addIdentifier(id)
 
 	w.Header().Set("Content-Type", "application/json")
 
