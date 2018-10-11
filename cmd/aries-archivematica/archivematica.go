@@ -8,13 +8,13 @@ import (
 	"github.com/julienschmidt/httprouter"
 )
 
-func getAIPs() {
+func getAIPsViaApplication() {
 	qs := "select sipUUID, aipFilename from SIPs where hidden = 0 and aipFilename is not null"
 
-	rows, err := db.Query(qs)
+	rows, err := adb.Query(qs)
 
 	if err != nil {
-		logger.Printf("db.Query() failed: [%s]", err.Error())
+		logger.Printf("adb.Query() failed: [%s]", err.Error())
 		return
 	}
 
@@ -39,13 +39,45 @@ func getAIPs() {
 	}
 }
 
+func getAIPsViaStorageService() {
+	qs := `select p.uuid, '/' || l.relative_path || '/' || p.current_path as path from locations_package p left join locations_location l on p.current_location_id = l.uuid where l.enabled = 1 and l.purpose = "AS"`
+
+	rows, err := sdb.Query(qs)
+
+	if err != nil {
+		logger.Printf("sdb.Query() failed: [%s]", err.Error())
+		return
+	}
+
+	defer rows.Close()
+
+	for rows.Next() {
+		var uuid string
+		var currentPath string
+		err = rows.Scan(&uuid, &currentPath)
+		if err != nil {
+			logger.Printf("rows.Scan() failed: [%s]", err.Error())
+			return
+		}
+		logger.Printf("uuid: [%s]  currentPath: [%s]", uuid, currentPath)
+	}
+
+	// get any error encountered during iteration
+	err = rows.Err()
+	if err != nil {
+		logger.Printf("rows.Err() failed: [%s]", err.Error())
+		return
+	}
+}
+
 /* Handles a request for information about a single ID */
 func archivematicaHandleId(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
 	logger.Printf("%s %s", r.Method, r.RequestURI)
 
 	id := params.ByName("id")
 
-	getAIPs()
+	getAIPsViaApplication()
+	getAIPsViaStorageService()
 
 	// build Aries API response object
 	var archivematicaResponse AriesAPI

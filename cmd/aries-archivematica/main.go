@@ -6,17 +6,17 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"strconv"
 
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/julienschmidt/httprouter"
+	_ "github.com/mattn/go-sqlite3"
 	"github.com/rs/cors"
 )
 
 const progname = "aries-archivematica"
 const version = "0.0.1"
 
-var db *sql.DB
+var adb, sdb *sql.DB
 var logger *log.Logger
 
 /**
@@ -27,22 +27,32 @@ func main() {
 	logger = log.New(os.Stdout, "", log.LstdFlags)
 
 	// Load cfg
-	logger.Printf("===> %s staring up <===", progname)
-	logger.Printf("Load configuration...")
+	logger.Printf("===> %s %s staring up <===", progname, version)
+	logger.Printf("Loadiing configuration...")
 	getConfigValues()
 
-	// Init DB connection
-	logger.Printf("Init DB connection...")
-	connectStr := fmt.Sprintf("%s:%s@tcp(%s)/%s?allowOldPasswords=%s", config.dbUser.value, config.dbPass.value,
-		config.dbHost.value, config.dbName.value, strconv.FormatBool(config.dbAllowOldPasswords.value))
-
+	// Initialize database connections
+	var connectStr string
 	var err error
-	db, err = sql.Open("mysql", connectStr)
+
+	logger.Printf("Initializing Archivematica database connection...")
+	connectStr = fmt.Sprintf("%s:%s@%s(%s)/%s", config.applicationDBUser.value, config.applicationDBPass.value,
+		config.applicationDBProtocol.value, config.applicationDBHost.value, config.applicationDBName.value)
+	adb, err = sql.Open("mysql", connectStr)
 	if err != nil {
-		fmt.Printf("Database connection failed: %s", err.Error())
+		fmt.Printf("Archivematica database initialization failed: %s", err.Error())
 		os.Exit(1)
 	}
-	defer db.Close()
+	defer adb.Close()
+
+	logger.Printf("Initializing Archivematica Storage Service database connection...")
+	connectStr = fmt.Sprintf("%s:%s?_query_only=true", config.storageDBProtocol.value, config.storageDBHost.value)
+	sdb, err = sql.Open("sqlite3", connectStr)
+	if err != nil {
+		fmt.Printf("Archivematica Storage Service database initialization failed: %s", err.Error())
+		os.Exit(1)
+	}
+	defer sdb.Close()
 
 	// Set routes and start server
 	mux := httprouter.New()
