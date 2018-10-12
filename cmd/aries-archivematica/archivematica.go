@@ -2,10 +2,13 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/julienschmidt/httprouter"
+	"github.com/satori/go.uuid"
 )
 
 func getAIPsViaApplication() {
@@ -70,12 +73,105 @@ func getAIPsViaStorageService() {
 	}
 }
 
-func getAIPInfo(id string) (string, string, string, error) {
+func getAIPInfoFromSIPTable(whereClause string) (string, string, error) {
+	qs := fmt.Sprintf(`select sipUUID, aipFilename from SIPs where hidden = 0 and %s`, whereClause)
+
+	logger.Printf("query: [%s]", qs)
+
+	rows, err := adb.Query(qs)
+
+	if err != nil {
+		logger.Printf("[getAIPInfoFromSIPTable] adb.Query() failed: [%s]", err.Error())
+		return "", "", errors.New("AIP from SIP table lookup query failed")
+	}
+
+	defer rows.Close()
+
+	var uuids, names []string
+
+	for rows.Next() {
+		var sipUUID string
+		var aipFilename string
+		err = rows.Scan(&sipUUID, &aipFilename)
+		if err != nil {
+			logger.Printf("[getAIPInfoFromSIPTable] rows.Scan() failed: [%s]", err.Error())
+			return "", "", errors.New("AIP from SIP table results scanning failed")
+		}
+		logger.Printf("sipUUID: [%s]  aipFilename: [%s]", sipUUID, aipFilename)
+		uuids = append(uuids, sipUUID)
+
+		// parse out name from aipFilename:
+		// format should be 'name.ext' or 'name-sipUUID.ext'
+		// remove SIP UUID if present, and drop the extension if any
+		name := strings.Replace(aipFilename, "-" + sipUUID, "", 1)
+		dot := strings.LastIndex(name,".")
+		if dot > 0 {
+			name = name[:dot]
+		}
+		logger.Printf("extracted name: [%s]", name)
+
+		names = append(names, name)
+	}
+
+	cnt := len(uuids)
+
+	switch {
+	case cnt == 0:
+		logger.Printf("[getAIPInfoFromSIPTable] no results")
+		return "", "", errors.New("AIP from SIP table query returned no results")
+	case cnt > 1:
+		logger.Printf("[getAIPInfoFromSIPTable] too many results")
+		return "", "", errors.New("AIP from SIP table query returned too many results")
+	}
+
+	return uuids[0], names[0], nil
+}
+
+func getFileFromUUID(aipUUID string) (string, error) {
+	return "fakeFile", nil
+}
+
+func getAIPFromId(id string) (*AriesAPI, error) {
 	// 1. if id is a UUID, lookup AIP filename in adb; otherwise, lookup UUID
 	// 2. extract AIP name from AIP filename: ${AIPName}-${UUID}.7z
 	// 2. lookup AIP location in sdb based on UUID
 
-	return "00000000-0000-0000-0000-000000000000", "fakeAIP", "/path/to/fakeAIP.7z", nil
+	var aipUUID, aipName, aipFile, where string
+	var aipErr error
+	var aipInfo AriesAPI
+
+	uuid, uuidErr := uuid.FromString(id)
+	if uuidErr != nil {
+		// id is not a UUID; lookup by name
+		logger.Printf("[%s] is not a UUID; looking up by name...", id)
+		where = fmt.Sprintf(`aipFilename regexp '^%s(-[[:xdigit:]]{8}-[[:xdigit:]]{4}-[[:xdigit:]]{4}-[[:xdigit:]]{4}-[[:xdigit:]]{12}\\.|\\.).*$'`, id)
+	} else {
+		// id is a UUID; lookup by UUID
+		logger.Printf("[%s] is a UUID; looking up by UUID [%s]...", id, uuid.String())
+		where = fmt.Sprintf(`lcase(sipUUID) = lcase('%s')`, uuid.String())
+	}
+
+	aipUUID, aipName, aipErr = getAIPInfoFromSIPTable(where)
+
+	if aipErr != nil {
+		logger.Printf("AIP identifier lookup failed: %s", aipErr.Error())
+		return nil, errors.New("AIP identifier lookup failed")
+	}
+
+	aipFile, aipErr = getFileFromUUID(aipUUID)
+	if aipErr != nil {
+		logger.Printf("AIP filename lookup failed: %s", aipErr.Error())
+		return nil, errors.New("AIP filename lookup failed")
+	}
+
+	aipAdminURL := fmt.Sprintf("http://amatica.lib.virginia.edu:81/archival-storage/%s/", aipUUID)
+
+	aipInfo.addIdentifier(aipName)
+	aipInfo.addIdentifier(aipUUID)
+	aipInfo.addAdministrativeUrl(aipAdminURL)
+	aipInfo.addMasterFile(aipFile)
+
+	return &aipInfo, nil
 }
 
 /* Handles a request for information about a single ID */
@@ -84,20 +180,16 @@ func archivematicaHandleId(w http.ResponseWriter, r *http.Request, params httpro
 
 	id := params.ByName("id")
 
-	getAIPsViaApplication()
-	getAIPsViaStorageService()
+//	getAIPsViaApplication()
+//	getAIPsViaStorageService()
 
-	aipUUID, aipName, aipFile, aipErr := getAIPInfo(id)
-	if aipErr != nil {
-		logger.Printf("aipErr: [%s]", aipErr.Error())
+	archivematicaResponse, err := getAIPFromId(id)
+	if err != nil {
+		w.WriteHeader(http.StatusNotFound)
+		logger.Printf("AIP not found with ID: %s", id)
+		fmt.Fprintf(w, "AIP not found with ID: %s", id)
+		return
 	}
-
-	logger.Printf("aipUUID: [%s]  aipName: [%s]  aipFile: [%s]", aipUUID, aipName, aipFile)
-
-	// build Aries API response object
-	var archivematicaResponse AriesAPI
-
-	archivematicaResponse.addIdentifier(id)
 
 	w.Header().Set("Content-Type", "application/json")
 
