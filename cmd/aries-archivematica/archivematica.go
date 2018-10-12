@@ -16,8 +16,6 @@ import (
 func getUUIDAndNameFromApplication(whereClause string) (string, string, error) {
 	qs := fmt.Sprintf(`select sipUUID, aipFilename from SIPs where hidden = 0 and %s`, whereClause)
 
-	logger.Printf("query: [%s]", qs)
-
 	rows, err := adb.Query(qs)
 
 	if err != nil {
