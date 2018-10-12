@@ -139,7 +139,7 @@ func getAIPFromId(id string) (*AriesAPI, error) {
 		return nil, errors.New("AIP filename lookup failed")
 	}
 
-	aipAdminURL := fmt.Sprintf("http://amatica.lib.virginia.edu:81/archival-storage/%s/", aipUUID)
+	aipAdminURL := strings.Replace(config.adminUrlTemplate.value, "{UUID}", aipUUID, 1)
 
 	aipInfo.addIdentifier(aipName)
 	aipInfo.addIdentifier(aipUUID)

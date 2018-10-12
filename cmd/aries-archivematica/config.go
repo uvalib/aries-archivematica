@@ -38,6 +38,7 @@ type configData struct {
 	storageDBName         configStringItem
 	storageDBUser         configStringItem
 	storageDBPass         configStringItem
+	adminUrlTemplate      configStringItem
 	useHttps              configBoolItem
 	sslCrt                configStringItem
 	sslKey                configStringItem
@@ -61,6 +62,7 @@ func init() {
 	config.storageDBName = configStringItem{value: "", configItem: configItem{flag: "N", env: "ARIES_ARCHIVEMATICA_STORAGE_DB_NAME", desc: "storage service DB name"}}
 	config.storageDBUser = configStringItem{value: "", configItem: configItem{flag: "U", env: "ARIES_ARCHIVEMATICA_STORAGE_DB_USER", desc: "storage service DB user"}}
 	config.storageDBPass = configStringItem{value: "", configItem: configItem{flag: "P", env: "ARIES_ARCHIVEMATICA_STORAGE_DB_PASS", desc: "storage service DB password"}}
+	config.adminUrlTemplate = configStringItem{value: "", configItem: configItem{flag: "t", env: "ARIES_ARCHIVEMATICA_ADMIN_URL_TEMPLATE", desc: "admin url template"}}
 	config.useHttps = configBoolItem{value: false, configItem: configItem{flag: "s", env: "ARIES_ARCHIVEMATICA_USE_HTTPS", desc: "use https"}}
 	config.sslCrt = configStringItem{value: "", configItem: configItem{flag: "c", env: "ARIES_ARCHIVEMATICA_SSL_CRT", desc: "ssl crt"}}
 	config.sslKey = configStringItem{value: "", configItem: configItem{flag: "k", env: "ARIES_ARCHIVEMATICA_SSL_KEY", desc: "ssl key"}}
@@ -108,6 +110,7 @@ func getConfigValues() {
 	flagStringVar(&config.storageDBName)
 	flagStringVar(&config.storageDBUser)
 	flagStringVar(&config.storageDBPass)
+	flagStringVar(&config.adminUrlTemplate)
 	flagBoolVar(&config.useHttps)
 	flagStringVar(&config.sslCrt)
 	flagStringVar(&config.sslKey)
@@ -132,6 +135,7 @@ func getConfigValues() {
 	configOK = ensureConfigStringSet(&config.storageDBName) && configOK
 	configOK = ensureConfigStringSet(&config.storageDBUser) && configOK
 	configOK = ensureConfigStringSet(&config.storageDBPass) && configOK
+	configOK = ensureConfigStringSet(&config.adminUrlTemplate) && configOK
 	if config.useHttps.value == true {
 		configOK = ensureConfigStringSet(&config.sslCrt) && configOK
 		configOK = ensureConfigStringSet(&config.sslKey) && configOK
@@ -157,6 +161,7 @@ func getConfigValues() {
 	logger.Printf("[CONFIG] storageDBName         = [%s]", config.storageDBName.value)
 	logger.Printf("[CONFIG] storageDBUser         = [%s]", config.storageDBUser.value)
 	logger.Printf("[CONFIG] storageDBPass         = [REDACTED]")
+	logger.Printf("[CONFIG] adminUrlTemplate      = [%s]", config.adminUrlTemplate.value)
 	logger.Printf("[CONFIG] useHttps              = [%s]", strconv.FormatBool(config.useHttps.value))
 	logger.Printf("[CONFIG] sslCrt                = [%s]", config.sslCrt.value)
 	logger.Printf("[CONFIG] sslKey                = [%s]", config.sslKey.value)
