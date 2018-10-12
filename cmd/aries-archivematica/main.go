@@ -14,7 +14,7 @@ import (
 )
 
 const progname = "aries-archivematica"
-const version = "0.0.1"
+const version = "1.0.0"
 
 var adb, sdb *sql.DB
 var logger *log.Logger
