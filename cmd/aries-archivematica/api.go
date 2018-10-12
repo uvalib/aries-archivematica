@@ -41,6 +41,10 @@ func (a *AriesAPI) addMetadataUrl(m MetadataUrl) {
 	a.MetadataUrls = append(a.MetadataUrls,m)
 }
 
+func (a *AriesAPI) addMasterFile(s string) {
+	a.MasterFiles = append(a.MasterFiles,s)
+}
+
 func (a *AriesAPI) addDerivativeFile(s string) {
 	a.DerivativeFiles = append(a.DerivativeFiles,s)
 }
