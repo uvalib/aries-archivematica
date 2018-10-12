@@ -43,8 +43,8 @@ func getUUIDAndNameFromApplication(whereClause string) (string, string, error) {
 		// parse out name from aipFilename:
 		// format should be 'name.ext' or 'name-sipUUID.ext'
 		// remove SIP UUID if present, and drop the extension if any
-		name := strings.Replace(aipFilename, "-" + sipUUID, "", 1)
-		dot := strings.LastIndex(name,".")
+		name := strings.Replace(aipFilename, "-"+sipUUID, "", 1)
+		dot := strings.LastIndex(name, ".")
 		if dot > 0 {
 			name = name[:dot]
 		}
@@ -154,9 +154,6 @@ func archivematicaHandleId(w http.ResponseWriter, r *http.Request, params httpro
 	logger.Printf("%s %s", r.Method, r.RequestURI)
 
 	id := params.ByName("id")
-
-//	getAIPsViaApplication()
-//	getAIPsViaStorageService()
 
 	archivematicaResponse, err := getAIPFromId(id)
 	if err != nil {

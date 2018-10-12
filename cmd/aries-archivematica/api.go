@@ -22,31 +22,31 @@ type AriesAPI struct {
 }
 
 func (a *AriesAPI) addIdentifier(s string) {
-	a.Identifiers = append(a.Identifiers,s)
+	a.Identifiers = append(a.Identifiers, s)
 }
 
 func (a *AriesAPI) addAdministrativeUrl(s string) {
-	a.AdministrativeUrls = append(a.AdministrativeUrls,s)
+	a.AdministrativeUrls = append(a.AdministrativeUrls, s)
 }
 
 func (a *AriesAPI) addAccessUrl(s string) {
-	a.AccessUrls = append(a.AccessUrls,s)
+	a.AccessUrls = append(a.AccessUrls, s)
 }
 
 func (a *AriesAPI) addServiceUrl(s ServiceUrl) {
-	a.ServiceUrls = append(a.ServiceUrls,s)
+	a.ServiceUrls = append(a.ServiceUrls, s)
 }
 
 func (a *AriesAPI) addMetadataUrl(m MetadataUrl) {
-	a.MetadataUrls = append(a.MetadataUrls,m)
+	a.MetadataUrls = append(a.MetadataUrls, m)
 }
 
 func (a *AriesAPI) addMasterFile(s string) {
-	a.MasterFiles = append(a.MasterFiles,s)
+	a.MasterFiles = append(a.MasterFiles, s)
 }
 
 func (a *AriesAPI) addDerivativeFile(s string) {
-	a.DerivativeFiles = append(a.DerivativeFiles,s)
+	a.DerivativeFiles = append(a.DerivativeFiles, s)
 }
 
 func (a *AriesAPI) setAccessRestriction(s string) {
