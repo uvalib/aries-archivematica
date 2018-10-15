@@ -4,7 +4,7 @@ This is a web service to implement the Aries API for Archivematica.
 It supports the following endpoints:
 
 * / : returns version information
-* /resources/archivematica/id/[ID] : returns a JSON object with some information about the AIP referenced by ID
+* /api/aries/[ID] : returns a JSON object with some information about the AIP referenced by ID
 
 ### System Requirements
 

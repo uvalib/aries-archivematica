@@ -62,8 +62,7 @@ func main() {
 	// Set routes and start server
 	mux := httprouter.New()
 	mux.GET("/", rootHandler)
-	mux.GET("/resources/archivematica/id/:id", archivematicaHandleId)
-	mux.GET("/resources/archivematica/all", nil)
+	mux.GET("/api/aries/:id", archivematicaHandleId)
 
 	logger.Printf("Start service on port %s", config.listenPort.value)
 
