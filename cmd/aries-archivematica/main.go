@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"time"
 
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/julienschmidt/httprouter"
@@ -18,6 +19,7 @@ const version = "1.0.0"
 
 var adb, sdb *sql.DB
 var logger *log.Logger
+var client *http.Client
 
 /**
  * Main entry point for the web service
@@ -53,6 +55,9 @@ func main() {
 		os.Exit(1)
 	}
 	defer sdb.Close()
+
+	// initialize http client
+	client = &http.Client{Timeout: 10 * time.Second}
 
 	// Set routes and start server
 	mux := httprouter.New()
