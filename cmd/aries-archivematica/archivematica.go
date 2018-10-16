@@ -13,7 +13,7 @@ func getAIPFromId(id string) (*AriesAPI, error) {
 }
 
 /* Handles a request for information about a single ID */
-func archivematicaHandleId(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
+func archivematicaIdHandler(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
 	logger.Printf("%s %s", r.Method, r.RequestURI)
 
 	id := params.ByName("id")
