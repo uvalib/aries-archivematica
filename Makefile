@@ -23,8 +23,8 @@ GOENV_linux =
 GOFLAGS_linux = 
 
 # extra flags
-GOENV_EXTRA = CGO_ENABLED=1 GOARCH=amd64
-GOFLAGS_EXTRA = -installsuffix cgo
+GOENV_EXTRA = GOARCH=amd64 # CGO_ENABLED=0
+GOFLAGS_EXTRA = # -installsuffix cgo
 
 # default target:
 
