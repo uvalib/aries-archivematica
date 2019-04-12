@@ -1,14 +1,19 @@
 # project specific definitions
-PROJECT = aries-archivematica
-SRCDIR = cmd/$(PROJECT)
+SRCDIR = cmd
 BINDIR = bin
+PKGDOCKER = aries-archivematica
+PACKAGES = $(PKGDOCKER)
 
 # go commands
 GOCMD = go
-GOBUILD = $(GOCMD) build
-GOCLEAN = $(GOCMD) clean
+GOBLD = $(GOCMD) build
+GOCLN = $(GOCMD) clean
+GOTST = $(GOCMD) test
 GOVET = $(GOCMD) vet
 GOFMT = $(GOCMD) fmt
+GOGET = $(GOCMD) get
+GOMOD = $(GOCMD) mod
+GOVER = $(GOCMD) version
 
 # default build target is host machine architecture
 MACHINE = $(shell uname -s | tr '[A-Z]' '[a-z]')
@@ -28,17 +33,30 @@ GOFLAGS_EXTRA =
 
 # default target:
 
-build: target compile symlink
+build: go-vars compile symlink
 
-target:
+go-vars:
 	$(eval GOENV = GOOS=$(TARGET) $(GOENV_$(TARGET)) $(GOENV_EXTRA))
 	$(eval GOFLAGS = $(GOFLAGS_$(TARGET)) $(GOFLAGS_EXTRA))
 
 compile:
-	$(GOENV) $(GOBUILD) $(GOFLAGS) -o $(BINDIR)/$(PROJECT).$(TARGET) $(SRCDIR)/*.go
+	@ \
+	echo "building packages: [$(PACKAGES)] for target: [$(TARGET)]" ; \
+	echo ; \
+	$(GOVER) ; \
+	echo ; \
+	for pkg in $(PACKAGES) ; do \
+		printf "compile: %-6s  env: [%s]  flags: [%s]\n" "$${pkg}" "$(GOENV)" "$(GOFLAGS)" ; \
+		$(GOENV) $(GOBLD) $(GOFLAGS) -o "$(BINDIR)/$${pkg}.$(TARGET)" "$(SRCDIR)/$${pkg}"/*.go || exit 1 ; \
+	done
 
 symlink:
-	ln -sf $(PROJECT).$(TARGET) $(BINDIR)/$(PROJECT)
+	@ \
+	echo ; \
+	for pkg in $(PACKAGES) ; do \
+		echo "symlink: $(BINDIR)/$${pkg} -> $${pkg}.$(TARGET)" ; \
+		ln -sf "$${pkg}.$(TARGET)" "$(BINDIR)/$${pkg}" || exit 1 ; \
+	done
 
 build-darwin: target-darwin build
 
@@ -59,16 +77,31 @@ rebuild-darwin: target-darwin rebuild
 
 rebuild-linux: target-linux rebuild
 
+# maintenance rules
 fmt:
-	(cd $(SRCDIR) && $(GOFMT))
+	@ \
+	for pkg in $(PACKAGES) ; do \
+		echo "fmt: $${pkg}" ; \
+		(cd "$(SRCDIR)/$${pkg}" && $(GOFMT)) ; \
+	done
 
 vet:
-	(cd $(SRCDIR) && $(GOVET))
+	@ \
+	for pkg in $(PACKAGES) ; do \
+		echo "vet: $${pkg}" ; \
+		(cd "$(SRCDIR)/$${pkg}" && $(GOVET)) ; \
+	done
 
 clean:
-	$(GOCLEAN)
-	rm -rf $(BINDIR)
+	@ \
+	echo "purge: $(BINDIR)/" ; \
+	rm -rf $(BINDIR) ; \
+	for pkg in $(PACKAGES) ; do \
+		echo "clean: $${pkg}" ; \
+		(cd "$(SRCDIR)/$${pkg}" && $(GOCLN)) ; \
+	done
 
 dep:
-	dep ensure
-	dep status
+	$(GOGET) -u
+	$(GOMOD) tidy
+	$(GOMOD) verify
