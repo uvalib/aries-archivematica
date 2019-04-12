@@ -18,11 +18,11 @@ type storageServiceMeta struct {
 
 type storageServiceObject struct {
 	CurrentFullPath string `json:"current_full_path,omitempty"`
-	UUID string `json:"uuid,omitempty"`
+	UUID            string `json:"uuid,omitempty"`
 }
 
 type storageServiceResponse struct {
-	Meta storageServiceMeta `json:"meta,omitempty"`
+	Meta    storageServiceMeta     `json:"meta,omitempty"`
 	Objects []storageServiceObject `json:"objects,omitempty"`
 }
 
